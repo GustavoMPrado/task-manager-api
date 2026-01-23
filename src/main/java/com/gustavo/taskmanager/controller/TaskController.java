@@ -10,6 +10,8 @@ import com.gustavo.taskmanager.dto.TaskPatchDTO;
 import com.gustavo.taskmanager.dto.TaskResponseDTO;
 import com.gustavo.taskmanager.dto.TaskUpdateDTO;
 import com.gustavo.taskmanager.entity.Task;
+import com.gustavo.taskmanager.entity.TaskPriority;
+import com.gustavo.taskmanager.entity.TaskStatus;
 import com.gustavo.taskmanager.service.TaskService;
 
 import jakarta.validation.Valid;
@@ -24,7 +26,6 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    // POST /tasks
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public TaskResponseDTO create(@Valid @RequestBody TaskCreateDTO dto) {
@@ -32,32 +33,32 @@ public class TaskController {
         return taskService.toResponseDTO(created);
     }
 
-    // GET /tasks (com paginação/ordenação)
     @GetMapping
-    public Page<TaskResponseDTO> list(Pageable pageable) {
-        return taskService.findAll(pageable);
+    public Page<TaskResponseDTO> list(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) TaskPriority priority,
+            Pageable pageable
+    ) {
+        return taskService.search(q, status, priority, pageable);
     }
 
-    // GET /tasks/{id}
     @GetMapping("/{id}")
     public TaskResponseDTO getById(@PathVariable Long id) {
         Task task = taskService.findById(id);
         return taskService.toResponseDTO(task);
     }
 
-    // PUT /tasks/{id}
     @PutMapping("/{id}")
     public TaskResponseDTO update(@PathVariable Long id, @Valid @RequestBody TaskUpdateDTO dto) {
         return taskService.update(id, dto);
     }
 
-    // PATCH /tasks/{id}
     @PatchMapping("/{id}")
     public TaskResponseDTO patch(@PathVariable Long id, @Valid @RequestBody TaskPatchDTO dto) {
         return taskService.patch(id, dto);
     }
 
-    // DELETE /tasks/{id}
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {

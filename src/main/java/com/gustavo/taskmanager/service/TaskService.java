@@ -12,6 +12,7 @@ import com.gustavo.taskmanager.dto.TaskResponseDTO;
 import com.gustavo.taskmanager.dto.TaskUpdateDTO;
 import com.gustavo.taskmanager.entity.Task;
 import com.gustavo.taskmanager.entity.TaskPriority;
+import com.gustavo.taskmanager.entity.TaskStatus;
 import com.gustavo.taskmanager.exception.TaskNotFoundException;
 import com.gustavo.taskmanager.repository.TaskRepository;
 
@@ -24,7 +25,6 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    // CREATE
     public Task create(TaskCreateDTO dto) {
         Task task = new Task();
         task.setTitle(dto.getTitle());
@@ -45,23 +45,35 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    // READ ALL (sem paginação) - pode manter, mas não vamos usar no controller principal
     public List<Task> findAll() {
         return taskRepository.findAll();
     }
 
-    // READ ALL (com paginação)
     public Page<TaskResponseDTO> findAll(Pageable pageable) {
         return taskRepository.findAll(pageable).map(this::toResponseDTO);
     }
 
-    // READ BY ID (entity)
+    public Page<TaskResponseDTO> search(String q, TaskStatus status, TaskPriority priority, Pageable pageable) {
+        String query = q == null ? null : q.trim();
+        boolean hasQ = query != null && !query.isBlank();
+
+        if (!hasQ && status == null && priority == null) {
+            return findAll(pageable);
+        }
+
+        if (hasQ) {
+            String like = "%" + query.toLowerCase() + "%";
+            return taskRepository.search(like, status, priority, pageable).map(this::toResponseDTO);
+        }
+
+        return taskRepository.filterOnly(status, priority, pageable).map(this::toResponseDTO);
+    }
+
     public Task findById(Long id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException(id));
     }
 
-    // MAPPER (Entity -> ResponseDTO)
     public TaskResponseDTO toResponseDTO(Task task) {
         TaskResponseDTO dto = new TaskResponseDTO();
         dto.setId(task.getId());
@@ -75,7 +87,6 @@ public class TaskService {
         return dto;
     }
 
-    // UPDATE (PUT - completo)
     public TaskResponseDTO update(Long id, TaskUpdateDTO dto) {
         Task task = findById(id);
 
@@ -98,7 +109,6 @@ public class TaskService {
         return toResponseDTO(saved);
     }
 
-    // PATCH (parcial)
     public TaskResponseDTO patch(Long id, TaskPatchDTO dto) {
         Task task = findById(id);
 
@@ -112,11 +122,12 @@ public class TaskService {
         return toResponseDTO(saved);
     }
 
-    // DELETE
     public void delete(Long id) {
         Task task = findById(id);
         taskRepository.delete(task);
     }
 }
+
+
 
 

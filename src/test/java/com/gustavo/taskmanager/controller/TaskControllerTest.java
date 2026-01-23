@@ -16,9 +16,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -36,17 +38,24 @@ import com.gustavo.taskmanager.exception.TaskNotFoundException;
 import com.gustavo.taskmanager.service.TaskService;
 
 @WebMvcTest(TaskController.class)
-@Import(GlobalExceptionHandler.class)
+@Import({ GlobalExceptionHandler.class, TaskControllerTest.MockConfig.class })
 class TaskControllerTest {
+
+    @TestConfiguration
+    static class MockConfig {
+        @Bean
+        TaskService taskService() {
+            return Mockito.mock(TaskService.class);
+        }
+    }
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
 
-    @MockBean TaskService taskService;
+    @Autowired TaskService taskService;
 
     @Test
     void post_quandoValido_deveRetornar201ComBody() throws Exception {
-        // Arrange
         String body = """
         {
           "title": "Nova task",
@@ -65,7 +74,6 @@ class TaskControllerTest {
         created.setDueDate(LocalDate.of(2030, 1, 1));
         created.prePersist();
 
-        // Controller faz: create() -> toResponseDTO()
         when(taskService.create(any())).thenReturn(created);
 
         TaskResponseDTO resp = new TaskResponseDTO();
@@ -80,7 +88,6 @@ class TaskControllerTest {
 
         when(taskService.toResponseDTO(created)).thenReturn(resp);
 
-        // Act + Assert
         mockMvc.perform(post("/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
@@ -153,7 +160,6 @@ class TaskControllerTest {
 
     @Test
     void post_quandoEnumInvalido_deveRetornar400ComMensagemJsonInvalido() throws Exception {
-        // status inválido -> Jackson falha -> HttpMessageNotReadableException -> handler específico
         String body = """
         {
           "title": "Teste",
@@ -307,4 +313,5 @@ class TaskControllerTest {
             .andExpect(status().isNoContent());
     }
 }
+
 
