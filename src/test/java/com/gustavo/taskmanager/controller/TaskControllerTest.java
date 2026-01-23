@@ -2,6 +2,7 @@ package com.gustavo.taskmanager.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -193,7 +194,7 @@ class TaskControllerTest {
             1
         );
 
-        when(taskService.findAll(any())).thenReturn(page);
+        when(taskService.search(nullable(String.class), any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/tasks")
                 .param("page", "0")
@@ -313,5 +314,4 @@ class TaskControllerTest {
             .andExpect(status().isNoContent());
     }
 }
-
 
