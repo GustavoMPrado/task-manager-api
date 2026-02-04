@@ -27,6 +27,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/taskdb
       SPRING_DATASOURCE_USERNAME: taskuser
       SPRING_DATASOURCE_PASSWORD: taskpass
+      SPRING_APPLICATION_JSON: '{"app":{"auth":{"username":"admin","password":"admin123"},"jwt":{"secret":"dev-secret-change-me-1234567890-1234567890-1234567890","expiration-minutes":120}}}'
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
       interval: 10s
@@ -36,6 +37,7 @@ services:
 
 volumes:
   taskdb_data:
+
 
 
 

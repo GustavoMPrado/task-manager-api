@@ -31,6 +31,19 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiError handleUnauthorized(UnauthorizedException ex, HttpServletRequest req) {
+        return new ApiError(
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                "Credenciais inválidas",
+                req.getRequestURI(),
+                null
+        );
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleValidation(MethodArgumentNotValidException ex, HttpServletRequest req) {
@@ -85,18 +98,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiError handleGeneral(Exception ex, HttpServletRequest req) {
-
-        ex.printStackTrace(); // aparece no Console do Eclipse (causa real do 500)
+        ex.printStackTrace();
 
         return new ApiError(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
-                ex.getClass().getSimpleName() + ": " + ex.getMessage(), // mostra a causa no JSON
+                ex.getClass().getSimpleName() + ": " + ex.getMessage(),
                 req.getRequestURI(),
                 null
         );
     }
 }
+
 
 

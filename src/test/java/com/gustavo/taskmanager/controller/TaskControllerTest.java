@@ -19,9 +19,12 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -36,9 +39,14 @@ import com.gustavo.taskmanager.entity.TaskPriority;
 import com.gustavo.taskmanager.entity.TaskStatus;
 import com.gustavo.taskmanager.exception.GlobalExceptionHandler;
 import com.gustavo.taskmanager.exception.TaskNotFoundException;
+import com.gustavo.taskmanager.security.JwtAuthFilter;
 import com.gustavo.taskmanager.service.TaskService;
 
-@WebMvcTest(TaskController.class)
+@WebMvcTest(
+        controllers = TaskController.class,
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthFilter.class)
+)
+@AutoConfigureMockMvc(addFilters = false)
 @Import({ GlobalExceptionHandler.class, TaskControllerTest.MockConfig.class })
 class TaskControllerTest {
 
@@ -90,15 +98,15 @@ class TaskControllerTest {
         when(taskService.toResponseDTO(created)).thenReturn(resp);
 
         mockMvc.perform(post("/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-            .andExpect(status().isCreated())
-            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.id").value(1))
-            .andExpect(jsonPath("$.title").value("Nova task"))
-            .andExpect(jsonPath("$.priority").value("HIGH"))
-            .andExpect(jsonPath("$.status").value("TODO"))
-            .andExpect(jsonPath("$.dueDate").value("2030-01-01"));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.title").value("Nova task"))
+                .andExpect(jsonPath("$.priority").value("HIGH"))
+                .andExpect(jsonPath("$.status").value("TODO"))
+                .andExpect(jsonPath("$.dueDate").value("2030-01-01"));
     }
 
     @Test
@@ -111,14 +119,14 @@ class TaskControllerTest {
         """;
 
         mockMvc.perform(post("/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.status").value(400))
-            .andExpect(jsonPath("$.error").value("Bad Request"))
-            .andExpect(jsonPath("$.message").value("Erro de validação"))
-            .andExpect(jsonPath("$.path").value("/tasks"))
-            .andExpect(jsonPath("$.errors.title").exists());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Erro de validação"))
+                .andExpect(jsonPath("$.path").value("/tasks"))
+                .andExpect(jsonPath("$.errors.title").exists());
     }
 
     @Test
@@ -133,11 +141,11 @@ class TaskControllerTest {
         """.formatted(big);
 
         mockMvc.perform(post("/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("Erro de validação"))
-            .andExpect(jsonPath("$.errors.description").exists());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Erro de validação"))
+                .andExpect(jsonPath("$.errors.description").exists());
     }
 
     @Test
@@ -152,11 +160,11 @@ class TaskControllerTest {
         """.formatted(yesterday);
 
         mockMvc.perform(post("/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("Erro de validação"))
-            .andExpect(jsonPath("$.errors.dueDate").exists());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Erro de validação"))
+                .andExpect(jsonPath("$.errors.dueDate").exists());
     }
 
     @Test
@@ -169,12 +177,12 @@ class TaskControllerTest {
         """;
 
         mockMvc.perform(post("/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.status").value(400))
-            .andExpect(jsonPath("$.message").value("JSON inválido ou enum inválido (status/priority)."))
-            .andExpect(jsonPath("$.path").value("/tasks"));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("JSON inválido ou enum inválido (status/priority)."))
+                .andExpect(jsonPath("$.path").value("/tasks"));
     }
 
     @Test
@@ -189,21 +197,21 @@ class TaskControllerTest {
         dto.setUpdatedAt(LocalDateTime.now());
 
         Page<TaskResponseDTO> page = new PageImpl<>(
-            List.of(dto),
-            PageRequest.of(0, 10),
-            1
+                List.of(dto),
+                PageRequest.of(0, 10),
+                1
         );
 
         when(taskService.search(nullable(String.class), any(), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/tasks")
-                .param("page", "0")
-                .param("size", "10"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.content[0].id").value(1))
-            .andExpect(jsonPath("$.content[0].title").value("Primeira"))
-            .andExpect(jsonPath("$.size").value(10))
-            .andExpect(jsonPath("$.number").value(0));
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Primeira"))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.number").value(0));
     }
 
     @Test
@@ -230,10 +238,10 @@ class TaskControllerTest {
         when(taskService.toResponseDTO(task)).thenReturn(resp);
 
         mockMvc.perform(get("/tasks/5"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(5))
-            .andExpect(jsonPath("$.status").value("DOING"))
-            .andExpect(jsonPath("$.priority").value("HIGH"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(5))
+                .andExpect(jsonPath("$.status").value("DOING"))
+                .andExpect(jsonPath("$.priority").value("HIGH"));
     }
 
     @Test
@@ -241,11 +249,11 @@ class TaskControllerTest {
         when(taskService.findById(999L)).thenThrow(new TaskNotFoundException(999L));
 
         mockMvc.perform(get("/tasks/999"))
-            .andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.status").value(404))
-            .andExpect(jsonPath("$.error").value("Not Found"))
-            .andExpect(jsonPath("$.message").value("Task not found with id: 999"))
-            .andExpect(jsonPath("$.path").value("/tasks/999"));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Task not found with id: 999"))
+                .andExpect(jsonPath("$.path").value("/tasks/999"));
     }
 
     @Test
@@ -273,11 +281,11 @@ class TaskControllerTest {
         when(taskService.update(eq(10L), any())).thenReturn(resp);
 
         mockMvc.perform(put("/tasks/10")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(10))
-            .andExpect(jsonPath("$.status").value("DONE"));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.status").value("DONE"));
     }
 
     @Test
@@ -299,11 +307,11 @@ class TaskControllerTest {
         when(taskService.patch(eq(11L), any())).thenReturn(resp);
 
         mockMvc.perform(patch("/tasks/11")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(11))
-            .andExpect(jsonPath("$.title").value("Parcial"));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(11))
+                .andExpect(jsonPath("$.title").value("Parcial"));
     }
 
     @Test
@@ -311,7 +319,9 @@ class TaskControllerTest {
         doNothing().when(taskService).delete(20L);
 
         mockMvc.perform(delete("/tasks/20"))
-            .andExpect(status().isNoContent());
+                .andExpect(status().isNoContent());
     }
 }
+
+
 
