@@ -39,6 +39,7 @@ public class SecurityConfig {
                     response.sendError(401);
                 }))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/actuator/health",
                                 "/v3/api-docs/**",
@@ -56,6 +57,7 @@ public class SecurityConfig {
         return http.build();
     }
 }
+
 
 
 
