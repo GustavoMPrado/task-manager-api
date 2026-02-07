@@ -1,6 +1,7 @@
 package com.gustavo.taskmanager.controller;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,10 @@ import jakarta.validation.Valid;
 @RequestMapping("/tasks")
 public class TaskController {
 
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_SIZE = 10;
+    private static final int MAX_SIZE = 50;
+
     private final TaskService taskService;
 
     public TaskController(TaskService taskService) {
@@ -38,8 +43,12 @@ public class TaskController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) TaskStatus status,
             @RequestParam(required = false) TaskPriority priority,
-            Pageable pageable
+            @RequestParam(defaultValue = "" + DEFAULT_PAGE) int page,
+            @RequestParam(defaultValue = "" + DEFAULT_SIZE) int size
     ) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), MAX_SIZE);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
         return taskService.search(q, status, priority, pageable);
     }
 
@@ -65,6 +74,7 @@ public class TaskController {
         taskService.delete(id);
     }
 }
+
 
 
 
